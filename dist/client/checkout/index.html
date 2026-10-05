@@ -755,15 +755,12 @@
     }
 
     const printProducts = [
-      { code:'PRN-021', title:'Life Saving Rules Pocket Flip Guide – Golden Rules', image:'printing/new/golden-rules-pocket-guide.webp', prices:{250:1407,300:1649,1000:4840}, description:'Pocket flip guide presenting the Perenco Protect Golden Rules in a durable quick-reference format.' },
+      { code:'PRN-021', title:'Life Saving Rules Pocket Flip Guide – Golden Rules', image:'printing/new/golden-rules-pocket-guide.webp', prices:{200:428,350:594,600:827,1000:1059}, description:'Pocket flip guide presenting the Perenco Protect Golden Rules in a durable quick-reference format.' },
       { code:'PRN-022', title:'Toolbox Talk Card 6pp DL – Site Environmental Standards', image:'printing/new/site-environmental-standards.webp', prices:{500:190,2500:582,5000:985}, description:'Six-page DL Site Environmental Standards card, creased and supplied flat for workplace reference.' },
-      { code:'PRN-023', title:'Face Fit Passports, 24pp A5', image:'printing/new/face-fit-passport.webp', prices:{500:895}, description:'Twenty-four-page A5 Face Fit Test Passport for recording respiratory protective equipment information.' },
-      { code:'PRN-024', title:'Emergency Personnel Log NCR Pads', image:'printing/new/emergency-personnel-log-ncr-pad.webp', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Emergency personnel log NCR pads for recording names, communications, times and key decisions. Price to be confirmed.' },
-      { code:'PRN-025', title:'NUI Guide Book, 78pp B5', image:'printing/new/nui-guide-78pp.webp', prices:{5:120}, description:'Seventy-eight-page B5 NUI Reference Guide with wire binding for practical site use.' },
-      { code:'PRN-026', title:'NUI Guide Book, 88pp B5', image:'printing/new/nui-guide-88pp.webp', prices:{10:255,30:595}, description:'Eighty-eight-page B5 NUI Reference Guide with wire binding for practical site use.' },
-      { code:'PRN-027', title:'NUI Guide Book, 92pp B5', image:'printing/new/nui-guide-92pp.webp', prices:{5:125}, description:'Ninety-two-page B5 NUI Reference Guide with wire binding for practical site use.' },
-      { code:'PRN-028', title:'Well Control Manual', image:'printing/new/well-control-manual.webp', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Wire-bound Well Control Manual for operational reference. Price and order quantity to be confirmed.' },
-      { code:'PRN-029', title:'Well Drills Book', image:'printing/new/well-drills-book.webp', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Wire-bound Well Services Response Drills book for wireline and slickline operations. Price and order quantity to be confirmed.' },
+      { code:'PRN-023', title:'Face Fit Passports, 24pp A5', image:'printing/new/face-fit-passport.webp', prices:{200:399,500:895}, description:'Twenty-four-page A5 Face Fit Test Passport for recording respiratory protective equipment information.' },
+      { code:'PRN-024', title:'Custom Title A5 NCR Pad, 2-part', image:'printing/new/emergency-personnel-log-ncr-pad.webp', form:'pad-titles', prices:{10:114,50:336}, description:'A5 two-part NCR pads printed with your own title, such as an emergency personnel log. Orders can be made up of assorted titles.' },
+      { code:'PRN-027', title:'Custom Spec NUI Guide', image:'printing/new/nui-guide-92pp.webp', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Custom specification NUI reference guide printed on durable plastic-type material with tabs. Price on request.' },
+      { code:'PRN-028', title:'Well Control / Drill Books', image:'printing/new/well-control-manual.webp', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Custom Well Control and Well Drills books printed on durable plastic-type material with tabs. Price on request.' },
       { code:'PRN-001', title:'Bordeaux House Induction Leaflet', image:'products/bordeaux-house-induction-leaflet.webp', prices:{100:48}, description:'Printed induction leaflet for Bordeaux House, designed to present essential visitor and site information clearly.' },
       { code:'PRN-002', title:'Cleeton Visitor Information Guide', image:'products/cleeton-visitor-information-guide.webp', prices:{100:85,150:110,200:129,300:155,500:179,1000:298}, description:'Four-page visitor information guide for Cleeton with a compact, easy-to-follow printed format.' },
       { code:'PRN-003', title:'CMAPP Poster A3', image:'products/cmapp-poster-a3.webp', prices:{20:30,30:45,100:65}, description:'A3 CMAPP poster produced for clear workplace display and consistent communication across site.' },
@@ -924,7 +921,7 @@
     }
 
     function mapBasketItem(row) {
-      return { id:row.id, code:row.product_code, title:row.title, image:row.image_path, category:row.category, quantity:Number(row.quantity), price:row.price == null ? 0 : Number(row.price), artwork:row.artwork_name || '', artworkPath:row.artwork_path || '', options:row.options || {} };
+      return { id:row.id, code:row.product_code, title:row.title, image:row.image_path, category:row.category, quantity:Number(row.quantity), price:row.price == null ? null : Number(row.price), artwork:row.artwork_name || '', artworkPath:row.artwork_path || '', options:row.options || {} };
     }
 
     async function loadBasket() {
@@ -1107,6 +1104,8 @@
         html += '<div class="checkbox-field"><input class="product-config-input" id="config-international" data-label="International" type="checkbox"><label for="config-international">International</label></div>';
       } else if (product.form === 'badge') {
         html += field('config-name','Name') + field('config-job-title','Job title') + field('config-department','Department');
+      } else if (product.form === 'pad-titles') {
+        html += '<div class="full"><label for="config-pad-titles">Pad title(s)</label><textarea class="product-config-input" id="config-pad-titles" data-label="Pad title(s)" placeholder="Enter each title and how many pads of each, e.g. Emergency Personnel Log – 5" required></textarea></div>';
       } else if (product.form === 'table-card') {
         html += '<div class="full"><label for="config-names">Names</label><textarea class="product-config-input" id="config-names" data-label="Names" required></textarea></div>';
       }
