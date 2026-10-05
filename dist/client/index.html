@@ -1763,10 +1763,19 @@
       try {
         const categorySubject = currentCategory + ' bespoke item — ' + enquiry.subject;
         const requestDetails = 'Estimated quantity: ' + enquiry.quantity + (enquiry.details ? '\n\n' + enquiry.details : '');
-        await supabaseRest('enquiries', { method:'POST', body:{ user_id:currentUser.id, name:enquiry.name, email:enquiry.email, subject:categorySubject, details:requestDetails } });
+        const savedEnquiries = await supabaseRest('enquiries', { method:'POST', prefer:'return=representation', body:{ user_id:currentUser.id, name:enquiry.name, email:enquiry.email, subject:categorySubject, details:requestDetails } });
+        let emailed = false;
+        try {
+          const session = getSession();
+          const enquiryId = savedEnquiries?.[0]?.id;
+          if (session?.access_token && enquiryId) {
+            const response = await fetch('/api/enquiry-notification', { method:'POST', headers:{ 'Authorization':'Bearer ' + session.access_token, 'Content-Type':'application/json' }, body:JSON.stringify({ enquiryId }) });
+            emailed = response.ok;
+          }
+        } catch (error) { console.error('Enquiry email failed', error); }
         form.reset(); document.getElementById('enquiry-name').value = currentProfile?.full_name || currentUser?.email?.split('@')[0] || '';
         document.getElementById('enquiry-email').value = currentUser?.email || '';
-        showToast('Your enquiry has been submitted.');
+        showToast(emailed ? 'Your enquiry has been submitted. A confirmation email is on its way.' : 'Your enquiry has been submitted.');
       } catch (error) { showToast(error.message); }
     });
 

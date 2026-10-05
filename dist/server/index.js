@@ -339,7 +339,7 @@ function generateQuotePdf(order, logoBytes) {
   return buildPdf(objects);
 }
 
-async function sendEmail(env, to, subject, html, text, logoContent='', quotePdfContent='', quoteNumber='quote', extraAttachments=[]) {
+async function sendEmail(env, to, subject, html, text, logoContent='', quotePdfContent='', quoteNumber='quote', extraAttachments=[], replyTo='') {
   if (!env.SENDGRID_API_KEY) throw new Error('Email service is not configured.');
   const attachments = [];
   if (logoContent) attachments.push({ content:logoContent, filename:'broadland-digital-logo.png', type:'image/png', disposition:'inline', content_id:'broadland-logo' });
@@ -352,6 +352,7 @@ async function sendEmail(env, to, subject, html, text, logoContent='', quotePdfC
       personalizations:[{ to:[{ email:to }] }],
       from:{ email:FROM_EMAIL, name:'Broadland Digital Quotes' },
       subject,
+      ...(replyTo ? { reply_to:{ email:replyTo } } : {}),
       content:[{ type:'text/plain', value:text }, { type:'text/html', value:html }],
       ...(attachments.length ? { attachments } : {})
     })
@@ -469,6 +470,80 @@ async function handleOrderConfirmation(request, env) {
   return Response.json({ sent:true });
 }
 
+function enquiryHtml(enquiry, supplierCopy=false, hasLogo=false) {
+  const greeting = supplierCopy
+    ? 'A new bespoke quote request has been submitted through the Perenco portal.'
+    : `Hello ${escapeHtml(enquiry.name || 'there')},<br><br>Thank you for your bespoke quote request. We have received the details below and will be in touch with a quote.`;
+  const row = (label, value) => `<tr><td style="padding:7px 0;color:#687789;width:145px;vertical-align:top">${label}</td><td style="padding:7px 0;color:#172c42">${value}</td></tr>`;
+  return `<!doctype html>
+  <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bespoke quote request</title></head>
+  <body style="margin:0;background:#f2f5f8;font-family:Arial,Helvetica,sans-serif;color:#172c42">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f2f5f8;padding:28px 12px"><tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(16,47,80,.10)">
+        <tr><td style="background:#ffffff;padding:25px 30px;color:#102f50;border-bottom:1px solid #e3e8ee">${hasLogo ? '<img src="cid:broadland-logo" width="191" alt="Broadland Digital" style="display:block;width:191px;max-width:100%;height:auto;margin-left:auto">' : '<div style="font-size:24px;font-weight:800">Broadland Digital</div>'}<div style="margin-top:12px;color:#687789;font-size:13px;letter-spacing:.08em;text-transform:uppercase">Perenco bespoke quote request</div></td></tr>
+        <tr><td style="padding:30px">
+          <p style="margin:0 0 24px;line-height:1.6">${greeting}</p>
+          <div style="background:#eef4f8;border-left:4px solid #3976ad;border-radius:7px;padding:17px 19px;margin-bottom:25px">
+            <div style="color:#687789;font-size:12px;text-transform:uppercase;letter-spacing:.08em">Request</div>
+            <div style="margin-top:4px;color:#102f50;font-size:19px;font-weight:800">${escapeHtml(enquiry.subject)}</div>
+          </div>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:14px">
+            ${row('Submitted', escapeHtml(displayDate(enquiry.created_at)))}
+            ${row('Name', escapeHtml(enquiry.name))}
+            ${row('Email', escapeHtml(enquiry.email))}
+            ${supplierCopy ? row('Branch login', escapeHtml(enquiry.branch_email || '')) : ''}
+            ${row('Details', escapeHtml(enquiry.details || '').replace(/\n/g,'<br>'))}
+          </table>
+        </td></tr>
+      </table>
+    </td></tr></table>
+  </body></html>`;
+}
+
+function enquiryText(enquiry, supplierCopy=false) {
+  return [
+    supplierCopy ? 'A new bespoke quote request has been submitted through the Perenco portal.' : `Hello ${enquiry.name || 'there'},\n\nThank you for your bespoke quote request. We have received the details below and will be in touch with a quote.`,
+    '',
+    `Request: ${enquiry.subject}`,
+    `Submitted: ${displayDate(enquiry.created_at)}`,
+    `Name: ${enquiry.name}`,
+    `Email: ${enquiry.email}`,
+    ...(supplierCopy ? [`Branch login: ${enquiry.branch_email || ''}`] : []),
+    '',
+    enquiry.details || ''
+  ].join('\n');
+}
+
+async function handleEnquiryNotification(request, env) {
+  const authorization = request.headers.get('Authorization') || '';
+  if (!authorization.startsWith('Bearer ')) return Response.json({ message:'You must be signed in.' }, { status:401 });
+  const authResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers:{ apikey:SUPABASE_KEY, Authorization:authorization } });
+  if (!authResponse.ok) return Response.json({ message:'Your session could not be verified.' }, { status:401 });
+  const user = await authResponse.json();
+  const body = await request.json().catch(() => ({}));
+  if (!/^[0-9a-f-]{36}$/i.test(body.enquiryId || '')) return Response.json({ message:'A valid enquiry is required.' }, { status:400 });
+
+  const query = new URLSearchParams({ select:'*', id:`eq.${body.enquiryId}`, user_id:`eq.${user.id}`, limit:'1' });
+  const enquiryResponse = await fetch(`${SUPABASE_URL}/rest/v1/enquiries?${query}`, { headers:{ apikey:SUPABASE_KEY, Authorization:authorization } });
+  if (!enquiryResponse.ok) return Response.json({ message:'The saved enquiry could not be loaded.' }, { status:502 });
+  const enquiry = (await enquiryResponse.json())[0];
+  if (!enquiry) return Response.json({ message:'Enquiry not found.' }, { status:404 });
+  enquiry.branch_email = user.email || '';
+
+  let logoContent = '';
+  if (env.ASSETS?.fetch) {
+    const logoResponse = await env.ASSETS.fetch(new Request(new URL('/broadland-digital-logo.png', request.url)));
+    if (logoResponse.ok) logoContent = base64FromBuffer(await logoResponse.arrayBuffer());
+  }
+  const hasLogo = Boolean(logoContent);
+  const customerEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(enquiry.email || '') ? enquiry.email : user.email;
+  await Promise.all([
+    sendEmail(env, SUPPLIER_EMAIL, `New bespoke quote request: ${enquiry.subject}`, enquiryHtml(enquiry, true, hasLogo), enquiryText(enquiry, true), logoContent, '', 'quote', [], customerEmail),
+    sendEmail(env, customerEmail, 'Your Perenco bespoke quote request', enquiryHtml(enquiry, false, hasLogo), enquiryText(enquiry, false), logoContent)
+  ]);
+  return Response.json({ sent:true });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -478,6 +553,14 @@ export default {
       catch (error) {
         console.error('Quote confirmation error', error);
         return Response.json({ message:'The quote confirmation emails could not be sent.' }, { status:502 });
+      }
+    }
+    if (url.pathname === '/api/enquiry-notification') {
+      if (request.method !== 'POST') return new Response('Method not allowed', { status:405, headers:{ Allow:'POST' } });
+      try { return await handleEnquiryNotification(request, env); }
+      catch (error) {
+        console.error('Enquiry notification error', error);
+        return Response.json({ message:'Your request was saved, but the notification email could not be sent.' }, { status:502 });
       }
     }
     if (url.pathname === '/api/proof-of-delivery') {
