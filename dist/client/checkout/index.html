@@ -257,6 +257,14 @@
     @media (max-width: 760px) { .admin-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .admin-filters { grid-template-columns:1fr; } .admin-list-head { display:none; } .admin-order-row, .user-row { grid-template-columns:1fr; gap:7px; } .admin-order-actions { grid-template-columns:1fr; } .order-detail-product { grid-template-columns:76px minmax(0,1fr); } .order-detail-product img { width:76px; height:76px; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
   </style>
+  <style>
+    html.restoring-session .view { display:none !important; }
+    html.restoring-session body::after { content:''; position:fixed; top:50%; left:50%; width:34px; height:34px; margin:-17px 0 0 -17px; border:3px solid #d6dee6; border-top-color:#3976ad; border-radius:50%; animation:restore-spin .8s linear infinite; }
+    @keyframes restore-spin { to { transform:rotate(360deg); } }
+  </style>
+  <script>
+    try { if (JSON.parse(sessionStorage.getItem('perenco-auth-session') || 'null')?.access_token || /access_token=/.test(location.hash)) document.documentElement.classList.add('restoring-session'); } catch (error) {}
+  </script>
 </head>
 <body>
   <main class="shell">
@@ -866,6 +874,7 @@
     }
 
     function showView(view) {
+      document.documentElement.classList.remove('restoring-session');
       [authView, verificationView, accountView, printListView, productView, basketView, checkoutView, orderCompleteView, ordersView, adminView, resetView].forEach(item => item.classList.remove('active'));
       view.classList.add('active');
       document.body.classList.toggle('portal-authenticated', [accountView, printListView, productView, basketView, checkoutView, orderCompleteView, ordersView, adminView].includes(view));
@@ -1046,10 +1055,9 @@
       }
       const selectedCategory = sessionStorage.getItem('perenco-selected-category');
       document.querySelectorAll('.category-card').forEach(card => card.classList.toggle('selected', card.dataset.category === selectedCategory));
-      showView(accountView);
+      if (!(currentPath() !== '/' || window.location.search) || !routeCurrentPath()) showView(accountView);
       try { await loadBasket(); } catch (error) { showToast(error.message); }
       startIdleTimer();
-      if (currentPath() !== '/' || window.location.search) window.setTimeout(routeCurrentPath, 0);
     }
 
     function renderProducts(products) {
@@ -1678,13 +1686,15 @@
         if (product) { currentCategory = product.category; openProduct(product, false); }
         else if (['Printing','Signage','Stationery','Merchandise'].includes(category)) openCatalogue(category, false);
         else showView(accountView);
-        return;
+        return true;
       }
       if (path === '/basket') openBasket(false);
       else if (path === '/checkout') openCheckout(false);
       else if (path === '/orders') openOrders(false);
       else if (path === '/admin') openAdmin(false);
       else if (path === '/order-complete' && orders[0]) { lastCreatedQuote = orders[0]; document.getElementById('completed-order-number').textContent = orders[0].number; showView(orderCompleteView); }
+      else return false;
+      return true;
     }
 
     document.querySelectorAll('.open-basket').forEach(button => button.addEventListener('click', () => openBasket()));
@@ -1812,7 +1822,7 @@
 
     if (!applyAuthCallback()) {
       const session = getSession();
-      if (session?.access_token) authRequest('/user', { token:session.access_token }).then(user => { session.user=user; saveSession(session); showAccount(user); }).catch(() => sessionStorage.removeItem(AUTH_STORAGE_KEY));
+      if (session?.access_token) authRequest('/user', { token:session.access_token }).then(user => { session.user=user; saveSession(session); showAccount(user); }).catch(() => { sessionStorage.removeItem(AUTH_STORAGE_KEY); document.documentElement.classList.remove('restoring-session'); });
       else if (currentPath() === '/admin') openAdmin(false);
     }
 
