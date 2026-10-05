@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "perenco-portal",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS"
+  },
+  "routes": [
+    { "pattern": "perenco-portal.com", "custom_domain": true },
+    { "pattern": "www.perenco-portal.com", "custom_domain": true }
+  ],
+  "observability": { "enabled": true }
+}
