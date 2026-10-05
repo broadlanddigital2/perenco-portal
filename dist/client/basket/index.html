@@ -487,8 +487,9 @@
               <p class="product-description" id="product-description"></p>
               <div id="product-config-fields"></div>
               <div class="quantity-field">
-                <label for="product-quantity">Quantity</label>
+                <label id="product-quantity-label" for="product-quantity">Quantity</label>
                 <select id="product-quantity"><option value="">Select quantity</option></select>
+                <input id="product-quantity-input" type="number" min="1" step="1" inputmode="numeric" placeholder="Enter quantity" hidden>
                 <p class="minimum-order" id="product-minimum-order"></p>
               </div>
               <div class="price-box" id="product-price"><span class="price-label">Price</span><strong class="price-value" id="product-price-value"></strong></div>
@@ -802,7 +803,7 @@
     const signageProducts = [
       { code:'SIG-003', title:'HGV High-Level Site Rules Sign with Weighted Base', image:'signage/new/hgv-site-rules-sign.webp', minimumOrder:1, prices:{1:450,2:900,3:1350,4:1800,5:2250}, description:'High-level HGV Site Rules sign supplied with a weighted base for loading and unloading areas.' },
       { code:'SIG-004', title:'LGV Perenco PPE Wall Sign Set', image:'signage/new/perenco-ppe-sign-set.webp', minimumOrder:1, prices:{1:170,2:340,3:510,4:680,5:850}, description:'Two-version LGV wall sign set displaying the approved Perenco PPE requirements.' },
-      { code:'SIG-001', title:'Luminescent LSA Fire & Safety Layout Plan', image:'signage/luminescent-lsa.webp', minimumOrder:1, prices:{1:120,2:240,3:360,4:480,5:495,10:990,25:2475,50:4950}, description:'Luminescent LSA fire and safety layout plan. £120 each for 1–4, or £99 each for 5 or more.' },
+      { code:'SIG-001', title:'Luminescent LSA Fire & Safety Layout Plan', image:'signage/luminescent-lsa.webp', minimumOrder:1, unitTiers:[[1,120],[5,99]], description:'Luminescent LSA fire and safety layout plan. £120 each for 1–4, or £99 each for 5 or more.' },
       { code:'SIG-002', title:'Life Saving Rules Ceiling Grid Hanging Banner', image:'signage/life-saving-rules.webp', minimumOrder:1, prices:{1:160,2:320,3:480,4:640,5:800}, description:'Life Saving Rules hanging banner designed for suspension from a ceiling grid.' },
       { code:'SIG-006', title:'Large Presentation Cheque — 800 × 480 mm', image:'signage/new/perenco-large-cheque.webp', form:'cheque', minimumOrder:1, prices:{1:35,2:70,5:175,10:350}, description:'Large 800 × 480 mm presentation cheque, personalised with the supplied payee, date, amount and wording.' }
     ].map(product => ({ ...product, category:'Signage', allowsArtwork:false }));
@@ -1116,7 +1117,12 @@
       document.getElementById('product-heading').textContent = product.title;
       document.getElementById('product-description').textContent = product.description;
       renderProductFields(product);
-      const quantities = product.prices ? Object.keys(product.prices) : product.quantities;
+      const freeQuantity = Boolean(product.unitTiers);
+      const quantityInput = document.getElementById('product-quantity-input');
+      quantityInput.hidden = !freeQuantity; quantityInput.value = '';
+      document.getElementById('product-quantity').hidden = freeQuantity;
+      document.getElementById('product-quantity-label').htmlFor = freeQuantity ? 'product-quantity-input' : 'product-quantity';
+      const quantities = product.prices ? Object.keys(product.prices) : (product.quantities || []);
       const quantity = document.getElementById('product-quantity');
       quantity.innerHTML = '<option value="">Select quantity</option>' + quantities.map(value => '<option value="' + value + '">' + Number(value).toLocaleString('en-GB') + '</option>').join('');
       const minimumOrder = document.getElementById('product-minimum-order');
@@ -1134,12 +1140,32 @@
       showView(productView);
     }
 
+    function selectedQuantity() {
+      if (selectedProduct?.unitTiers) {
+        const value = document.getElementById('product-quantity-input').value.trim();
+        return /^[1-9]\d*$/.test(value) ? value : '';
+      }
+      return document.getElementById('product-quantity').value;
+    }
+
+    function unitPriceFor(product, quantity) {
+      if (!product.unitTiers) return null;
+      return product.unitTiers.filter(([minimum]) => Number(quantity) >= minimum).pop()?.[1] ?? null;
+    }
+
+    function priceFor(product, quantity) {
+      if (product.unitTiers) { const unit = unitPriceFor(product, quantity); return unit == null ? null : Math.round(unit * Number(quantity) * 100) / 100; }
+      return product.prices?.[quantity] ?? null;
+    }
+
     function updatePrice() {
-      const quantity = document.getElementById('product-quantity').value;
+      const quantity = selectedQuantity();
       const box = document.getElementById('product-price');
       if (!quantity || !selectedProduct) { box.classList.remove('show'); return; }
-      const price = selectedProduct.prices?.[quantity];
-      document.getElementById('product-price-value').textContent = price == null ? 'Price to be confirmed' : new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(price);
+      const price = priceFor(selectedProduct, quantity);
+      const money = value => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(value);
+      const unit = unitPriceFor(selectedProduct, quantity);
+      document.getElementById('product-price-value').textContent = price == null ? 'Price to be confirmed' : money(price) + (unit != null ? ' (' + money(unit) + ' each)' : '');
       box.classList.add('show');
     }
 
@@ -1357,11 +1383,12 @@
     document.getElementById('back-to-categories').addEventListener('click', () => goHome());
     document.getElementById('back-to-printing').addEventListener('click', () => openCatalogue(currentCategory));
     document.getElementById('product-quantity').addEventListener('change', updatePrice);
+    document.getElementById('product-quantity-input').addEventListener('input', updatePrice);
 
     document.getElementById('add-product-enquiry').addEventListener('click', async () => {
       if (!selectedProduct) return;
-      const quantity = document.getElementById('product-quantity').value;
-      if (!quantity) { showToast('Select a quantity before adding this product.'); return; }
+      const quantity = selectedQuantity();
+      if (!quantity) { showToast(selectedProduct.unitTiers ? 'Enter a whole-number quantity before adding this product.' : 'Select a quantity before adding this product.'); return; }
       const configInputs = [...document.querySelectorAll('.product-config-input')];
       const invalid = configInputs.find(input => !input.checkValidity());
       if (invalid) { invalid.reportValidity(); invalid.focus(); return; }
@@ -1370,7 +1397,7 @@
       if (artwork.files[0]?.size > 25 * 1024 * 1024) { document.getElementById('artwork-file-error').textContent = 'Artwork must be 25 MB or smaller.'; return; }
       const options = {};
       configInputs.forEach(input => { options[input.dataset.label] = input.type === 'checkbox' ? (input.checked ? 'Yes' : 'No') : input.value; });
-      const price = selectedProduct.prices?.[quantity] ?? null;
+      const price = priceFor(selectedProduct, quantity);
       try {
         const artworkPath = artwork.files[0] ? await uploadOrderFile(artwork.files[0], 'basket-artwork') : '';
         const rows = await supabaseRest('basket_items', { method:'POST', prefer:'return=representation', body:{
