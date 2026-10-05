@@ -700,7 +700,7 @@
       const delivery = selectedDelivery();
       const exVatTotal = subtotal + delivery.cost;
       const vat = vatOn(basket, delivery.cost);
-      const pendingLabel = hasPending ? ' + prices TBC' : '';
+      const pendingLabel = hasPending ? ' + POA items' : '';
       document.getElementById('checkout-subtotal').textContent = formatMoney(subtotal) + pendingLabel;
       document.getElementById('checkout-delivery-cost').textContent = delivery.method ? formatMoney(delivery.cost) : 'Select a location';
       document.getElementById('checkout-vat').textContent = formatMoney(vat) + pendingLabel;
@@ -1179,7 +1179,7 @@
       const price = priceFor(selectedProduct, quantity);
       const money = value => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(value);
       const unit = unitPriceFor(selectedProduct, quantity);
-      document.getElementById('product-price-value').textContent = price == null ? 'Price to be confirmed' : money(price) + (unit != null ? ' (' + money(unit) + ' each)' : '') + (isZeroRated(selectedProduct.code) ? ' – no VAT' : '');
+      document.getElementById('product-price-value').textContent = price == null ? 'POA – price on application' : money(price) + (unit != null ? ' (' + money(unit) + ' each)' : '') + (isZeroRated(selectedProduct.code) ? ' – no VAT' : '');
       box.classList.add('show');
     }
 
@@ -1437,7 +1437,7 @@
         article.className = 'basket-item';
         const details = Object.entries(item.options || {}).filter(([,value]) => value).map(([key,value]) => '<div><dt>' + escapeHtml(key) + ':</dt><dd>' + escapeHtml(value) + '</dd></div>');
         if (item.artwork) details.push('<div><dt>Artwork:</dt><dd>' + escapeHtml(item.artwork) + '</dd></div>');
-        const price = item.price == null ? 'Price TBC' : new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(item.price);
+        const price = item.price == null ? 'POA' : new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(item.price);
         article.innerHTML = '<img src="' + escapeHtml(item.image) + '" alt=""><div><h3>' + escapeHtml(item.title) + '</h3><p class="basket-meta">' + escapeHtml(item.code) + '</p><dl class="basket-details"><div><dt>Quantity:</dt><dd>' + item.quantity.toLocaleString('en-GB') + '</dd></div>' + details.join('') + '</dl><button class="remove-item" type="button">Remove</button></div><div class="basket-price">' + price + '</div>';
         article.querySelector('.remove-item').addEventListener('click', async () => {
           try {
@@ -1450,7 +1450,7 @@
       }));
       const numericTotal = basket.reduce((total,item) => total + (item.price || 0), 0);
       const hasPending = basket.some(item => item.price == null);
-      document.getElementById('basket-total').textContent = new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(numericTotal) + (hasPending ? ' + prices TBC' : '');
+      document.getElementById('basket-total').textContent = new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(numericTotal) + (hasPending ? ' + POA items' : '');
     }
 
     function setPath(path, replace=false) {
@@ -1482,7 +1482,7 @@
       });
       const deliveryNote = files.find(file => file.kind === 'delivery_note');
       const proofOfDelivery = files.filter(file => file.kind === 'proof_of_delivery').sort((a,b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))).pop();
-      return { id:row.id, number:row.order_number, createdAt:row.created_at, updatedAt:row.updated_at, validUntil:row.quote_valid_until, status:row.status, customerEmail:row.customer_email, contactName:row.quote_contact_name || '', contactEmail:row.quote_contact_email || '', deliveryAddress:row.delivery_method || row.delivery_address, deliveryCost:Number(row.delivery_cost || 0), subtotal:Number(row.subtotal || 0), hasDeliveryBreakdown:Boolean(row.delivery_method), notes:row.notes || '', purchaseOrder:row.purchase_order || '', totalLabel:row.total_label || 'Price TBC', items, deliveryNotePath:deliveryNote?.storage_path || '', deliveryNoteName:deliveryNote?.file_name || '', proofOfDeliveryPath:proofOfDelivery?.storage_path || '', proofOfDeliveryName:proofOfDelivery?.file_name || '' };
+      return { id:row.id, number:row.order_number, createdAt:row.created_at, updatedAt:row.updated_at, validUntil:row.quote_valid_until, status:row.status, customerEmail:row.customer_email, contactName:row.quote_contact_name || '', contactEmail:row.quote_contact_email || '', deliveryAddress:row.delivery_method || row.delivery_address, deliveryCost:Number(row.delivery_cost || 0), subtotal:Number(row.subtotal || 0), hasDeliveryBreakdown:Boolean(row.delivery_method), notes:row.notes || '', purchaseOrder:row.purchase_order || '', totalLabel:row.total_label || 'POA', items, deliveryNotePath:deliveryNote?.storage_path || '', deliveryNoteName:deliveryNote?.file_name || '', proofOfDeliveryPath:proofOfDelivery?.storage_path || '', proofOfDeliveryName:proofOfDelivery?.file_name || '' };
     }
 
     async function loadOrders() {
@@ -1522,8 +1522,8 @@
         const amount = Number(item.price || 0);
         const unitPrice = item.quantity ? amount / Number(item.quantity) : amount;
         const detail = Object.entries(item.options || {}).filter(([,value]) => value).map(([key,value]) => '<br><span class="detail">' + escapeHtml(key) + ': ' + escapeHtml(value) + '</span>').join('');
-        const priceLabel = item.price == null ? 'TBC' : formatMoney(unitPrice);
-        const amountLabel = item.price == null ? 'TBC' : formatMoney(amount);
+        const priceLabel = item.price == null ? 'POA' : formatMoney(unitPrice);
+        const amountLabel = item.price == null ? 'POA' : formatMoney(amount);
         return '<tr><td>' + escapeHtml(item.title) + detail + '</td><td class="number">' + Number(item.quantity).toLocaleString('en-GB') + '</td><td class="number">' + priceLabel + '</td><td class="number">' + (isZeroRated(item.code) ? '0%' : '20%') + '</td><td class="number">' + amountLabel + '</td></tr>';
       }).join('');
       const deliveryRow = order.deliveryCost ? '<tr><td>Delivery - ' + escapeHtml(order.deliveryAddress) + '</td><td class="number">1</td><td class="number">' + formatMoney(order.deliveryCost) + '</td><td class="number">20%</td><td class="number">' + formatMoney(order.deliveryCost) + '</td></tr>' : '';
@@ -1535,7 +1535,7 @@
         <div class="meta"><strong>Date</strong>${display(date)}<strong>Expiry</strong>${display(validUntil)}<strong>Quote Number</strong>${escapeHtml(order.number)}<strong>Reference</strong>${escapeHtml(order.contactName || order.contactEmail || 'Perenco portal')}<strong>VAT Number</strong>825861607</div>
         <div class="supplier"><img src="/broadland-digital-logo.png" alt="Broadland Digital"><strong>Broadland Digital Limited</strong><br>Unit 14 Vulcan House<br>Vulcan Road North<br>Norwich<br>NR6 6AQ</div></section>
         <table class="items"><thead><tr><th>Description</th><th class="number">Quantity</th><th class="number">Unit Price</th><th class="number">VAT</th><th class="number">Amount GBP</th></tr></thead><tbody>${itemRows}${deliveryRow}</tbody></table>
-        <div style="display:flex;align-items:flex-start"><div class="vat-note">All prices are exclusive of VAT, which will be charged at the current prevailing rate${(order.items || []).some(item => isZeroRated(item.code)) ? '. Items marked 0% are zero-rated' : ''}</div><table class="totals"><tr><td>Subtotal</td><td>${formatMoney(exVatTotal)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr><td>TOTAL VAT 20%</td><td>${formatMoney(vat)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr class="total"><td>TOTAL GBP</td><td>${escapeHtml(order.totalLabel || formatMoney(total))}</td></tr></table></div>
+        <div style="display:flex;align-items:flex-start"><div class="vat-note">All prices are exclusive of VAT, which will be charged at the current prevailing rate${(order.items || []).some(item => isZeroRated(item.code)) ? '. Items marked 0% are zero-rated' : ''}</div><table class="totals"><tr><td>Subtotal</td><td>${formatMoney(exVatTotal)}${hasPending ? ' + POA items' : ''}</td></tr><tr><td>TOTAL VAT 20%</td><td>${formatMoney(vat)}${hasPending ? ' + POA items' : ''}</td></tr><tr class="total"><td>TOTAL GBP</td><td>${escapeHtml(order.totalLabel || formatMoney(total))}</td></tr></table></div>
         <section class="terms"><h2>Terms</h2><p>Payment on receipt of invoice or 30 days net when on account.</p><p>Bank Transfer to: Lloyds Bank Acc No: 04213365 Sort Code: 30-96-17</p><p>Unless queries are raised within 7 days of receipt of any invoice, it shall be taken that services and good have been received as stated and full paymentwill be made as per our terms.</p><p>The company reserves the right to charge interest on overdue accounts using the Late Payment of Commercial Debts (interest) Act. Design work iscovered by copyright law.</p><p>Full terms and conditions are available at <a href="http://broadlanddigital.co.uk">broadlanddigital.co.uk</a></p></section>
         <footer class="footer">Company Registration No: 04802472. Registered Office: Unit 14 Vulcan House, Vulcan Road North, Norwich, NR6 6AQ.</footer>
       </main></body></html>`;
@@ -1744,7 +1744,7 @@
           quote_contact_name:quoteContact.name, quote_contact_email:quoteContact.email,
           delivery_address:delivery.method, delivery_method:delivery.method, delivery_cost:delivery.cost, subtotal,
           notes:document.getElementById('order-notes').value.trim(),
-          status:'New quote', total_label:formatMoney(numericTotal) + (hasPending ? ' + prices TBC' : '')
+          status:'New quote', total_label:formatMoney(numericTotal) + (hasPending ? ' + POA items' : '')
         }});
         const orderId = created[0].id;
         const orderNumber = created[0].order_number;

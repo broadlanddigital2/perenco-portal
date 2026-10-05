@@ -47,7 +47,7 @@ function orderHtml(order, customerName, supplierCopy=false, hasLogo=false) {
         ${optionRows(item.options)}
       </td>
       <td style="padding:16px 12px;border-bottom:1px solid #e3e8ee;text-align:center;vertical-align:top">${Number(item.quantity).toLocaleString('en-GB')}</td>
-      <td style="padding:16px 12px;border-bottom:1px solid #e3e8ee;text-align:right;vertical-align:top;font-weight:700">${money(item.price)}</td>
+      <td style="padding:16px 12px;border-bottom:1px solid #e3e8ee;text-align:right;vertical-align:top;font-weight:700">${item.price == null ? 'POA' : money(item.price)}</td>
     </tr>`).join('');
   const greeting = supplierCopy ? 'A new quote has been created through the Perenco portal.' : `Hello ${escapeHtml(customerName || 'there')},<br><br>Your quote has been created and is ready to view in the portal.`;
   const notes = order.notes ? `<tr><td style="padding:7px 0;color:#687789;width:145px">Quote notes</td><td style="padding:7px 0;color:#172c42">${escapeHtml(order.notes).replace(/\n/g,'<br>')}</td></tr>` : '';
@@ -93,7 +93,7 @@ function orderText(order, customerName, supplierCopy=false) {
   const vat = vatOn(order);
   const lines = (order.order_items || []).map(item => {
     const options = textOptions(item.options);
-    return `- ${item.title} (${item.product_code})\n  Quantity: ${item.quantity}\n  Price: ${money(item.price)}${options ? `\n${options}` : ''}`;
+    return `- ${item.title} (${item.product_code})\n  Quantity: ${item.quantity}\n  Price: ${item.price == null ? 'POA' : money(item.price)}${options ? `\n${options}` : ''}`;
   }).join('\n\n');
   return `${supplierCopy ? 'A new quote has been created through the Perenco portal.' : `Hello ${customerName || 'there'},\n\nYour quote has been created.`}
 
@@ -305,15 +305,15 @@ function generateQuotePdf(order, logoBytes) {
       const amount = item.price == null ? null : Number(item.price);
       const unit = amount == null ? null : amount / Math.max(1,Number(item.quantity || 1));
       rightText(commands,360,y,8.5,Number(item.quantity || 0).toLocaleString('en-GB'));
-      rightText(commands,445,y,8.5,amount == null ? 'TBC' : pdfAmount(unit));
+      rightText(commands,445,y,8.5,amount == null ? 'POA' : pdfAmount(unit));
       rightText(commands,490,y,8.5,isZeroRated(item.product_code) ? '0%' : '20%');
-      rightText(commands,548,y,8.5,amount == null ? 'TBC' : pdfAmount(amount));
+      rightText(commands,548,y,8.5,amount == null ? 'POA' : pdfAmount(amount));
       y -= 38;
       line(commands,48,y+11,548,y+11,.25);
     }
 
     if (isLast) {
-      const pending = (order.order_items || []).some(item => item.price == null) ? ' + prices TBC' : '';
+      const pending = (order.order_items || []).some(item => item.price == null) ? ' + POA items' : '';
       y -= 4;
       text(commands,48,y,8,'All prices are exclusive of VAT, which will be charged at the');
       text(commands,48,y-11,8,'current prevailing rate.');
