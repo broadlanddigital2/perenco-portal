@@ -445,8 +445,8 @@
           </div>
           <div class="product-grid" id="print-product-grid"></div>
           <section class="enquiry-panel" id="print-enquiry" aria-labelledby="enquiry-heading">
-            <h3 id="enquiry-heading">Can’t find what you are looking for?</h3>
-            <p>Tell us what you need and include as much detail as possible.</p>
+            <h3 id="enquiry-heading">Bespoke item quote request</h3>
+            <p id="enquiry-intro">Need an item that is not listed above? Tell us what you need and we will prepare a quote.</p>
             <form class="enquiry-form" id="print-enquiry-form">
               <div>
                 <label for="enquiry-name">Name</label>
@@ -456,15 +456,19 @@
                 <label for="enquiry-email">Email address</label>
                 <input id="enquiry-email" name="email" type="email" autocomplete="email" required>
               </div>
-              <div class="full">
-                <label for="enquiry-subject">What are you looking for?</label>
-                <input id="enquiry-subject" name="subject" type="text" placeholder="Product or print requirement" required>
+              <div>
+                <label for="enquiry-subject">Product or item required</label>
+                <input id="enquiry-subject" name="subject" type="text" placeholder="Describe the item" required>
+              </div>
+              <div>
+                <label for="enquiry-quantity">Estimated quantity</label>
+                <input id="enquiry-quantity" name="quantity" type="number" min="1" step="1" placeholder="Quantity" required>
               </div>
               <div class="full">
                 <label for="enquiry-details">Details</label>
                 <textarea id="enquiry-details" name="details" placeholder="Sizes, quantities, materials, delivery date or any other information"></textarea>
               </div>
-              <button class="primary" type="submit">Save enquiry draft</button>
+              <button class="primary" type="submit">Submit quote request</button>
             </form>
           </section>
         </section>
@@ -799,7 +803,8 @@
       { code:'SIG-003', title:'HGV High-Level Site Rules Sign with Weighted Base', image:'signage/new/hgv-site-rules-sign.webp', minimumOrder:1, prices:{1:450,2:900,3:1350,4:1800,5:2250}, description:'High-level HGV Site Rules sign supplied with a weighted base for loading and unloading areas.' },
       { code:'SIG-004', title:'LGV Perenco PPE Wall Sign Set', image:'signage/new/perenco-ppe-sign-set.webp', minimumOrder:1, prices:{1:170,2:340,3:510,4:680,5:850}, description:'Two-version LGV wall sign set displaying the approved Perenco PPE requirements.' },
       { code:'SIG-001', title:'Luminescent LSA Fire & Safety Layout Plan', image:'signage/luminescent-lsa.webp', minimumOrder:1, prices:{1:120,2:240,3:360,4:480,5:495,10:990,25:2475,50:4950}, description:'Luminescent LSA fire and safety layout plan. £120 each for 1–4, or £99 each for 5 or more.' },
-      { code:'SIG-002', title:'Life Saving Rules Pull-Up Banner', image:'signage/life-saving-rules.webp', prices:{1:0,5:0,10:0,25:0,50:0}, description:'Portable Life Saving Rules pull-up banner for prominent display at offices, sites and safety events.' }
+      { code:'SIG-002', title:'Life Saving Rules Ceiling Grid Hanging Banner', image:'signage/life-saving-rules.webp', minimumOrder:1, prices:{1:160,2:320,3:480,4:640,5:800}, description:'Life Saving Rules hanging banner designed for suspension from a ceiling grid.' },
+      { code:'SIG-006', title:'Large Presentation Cheque — 800 × 480 mm', image:'signage/new/perenco-large-cheque.webp', form:'cheque', minimumOrder:1, prices:{1:35,2:70,5:175,10:350}, description:'Large 800 × 480 mm presentation cheque, personalised with the supplied payee, date, amount and wording.' }
     ].map(product => ({ ...product, category:'Signage', allowsArtwork:false }));
 
     const merchandiseProducts = [
@@ -808,9 +813,10 @@
       { code:'MER-002', title:'ESR T-Shirt', image:'merchandise/new/esr-tshirt.webp', minimumOrder:15, prices:{15:360,30:720,45:1080,60:1440,75:1800}, description:'White ESR branded T-shirt featuring Perenco and ESR identity details.' },
       { code:'MER-003', title:'ESR Jumper', image:'merchandise/new/esr-jumper.webp', minimumOrder:15, prices:{15:375,30:750,45:1125,60:1500,75:1875}, description:'Navy ESR branded jumper with front, back and sleeve branding.' },
       { code:'MER-004', title:'WSI Heather Grey Polo Shirt', image:'merchandise/new/wsi-heather-grey-polo.webp', minimumOrder:20, prices:{20:240,40:480,60:720,80:960,100:1200}, description:'Heather grey WSI polo shirt with embroidered chest branding.' },
-      { code:'MER-005', title:'Perenco Lanyards', image:'merchandise/new/perenco-lanyards.webp', prices:{1:0,5:0,10:0,25:0,50:0}, description:'Perenco branded lanyards available in the approved colour and logo treatments.' },
-      { code:'MER-006', title:'ESR YETI Mug', image:'merchandise/new/esr-yeti-mug.webp', prices:{1:0,5:0,10:0,25:0,50:0}, description:'Navy insulated YETI mug featuring ESR branding.' },
-      { code:'MER-007', title:'Perenco YETI Tumbler', image:'merchandise/new/perenco-yeti-mug.webp', prices:{1:0,5:0,10:0,25:0,50:0}, description:'Blue insulated YETI tumbler featuring the Perenco design.' },
+      { code:'MER-005', title:'Perenco Lanyards', image:'merchandise/new/perenco-lanyards.webp', minimumOrder:100, prices:{100:240,150:295,250:365,300:410}, description:'Perenco branded lanyards available in the approved colour and logo treatments.' },
+      { code:'MER-006', title:'YETI Mug — Various Colours Available', image:'merchandise/new/esr-yeti-mug.webp', form:'colour', minimumOrder:5, prices:{5:157.25,10:314.50,25:786.25,50:1572.50}, description:'Branded insulated YETI mug available in a range of colours, priced at £31.45 each.' },
+      { code:'MER-007', title:'YETI Tumbler', image:'merchandise/new/perenco-yeti-mug.webp', minimumOrder:1, prices:{1:55,5:275,10:550,25:1375}, description:'Branded insulated YETI tumbler, priced at £55 each.' },
+      { code:'MER-009', title:'Personalised ESR Backpack', image:'merchandise/new/esr-personalised-backpack.webp', form:'personalised-name', minimumOrder:5, prices:{5:237.50,10:475,25:1187.50,50:2375}, description:'ESR branded backpack including a personalised name, priced at £47.50 each.' },
       { code:'FRP-COASTER-V1', title:'Cup Coasters', image:'merchandise/cup-coasters.png', prices:{20:75,40:150,60:225,80:300,100:375}, description:'Branded cup coasters for offices, meeting rooms and events.' },
       { code:'FRP-GL-BOTTLE-V1', title:'Glass Bottles', image:'merchandise/glass-bottles.png', prices:{3:32.97,6:65.94,9:98.91,12:131.88,15:164.85}, description:'Reusable branded glass bottles for workplace and event use.' },
       { code:'FRP-UMB-LG-V1', title:'Golfing Umbrellas', image:'merchandise/golfing-umbrellas.png', prices:{3:53.25,6:106.50,9:159.75,12:213,15:266.25}, description:'Large branded golfing umbrellas for corporate and outdoor use.' },
@@ -973,6 +979,19 @@
       }
     }
 
+    async function sendProofOfDelivery(orderNumber) {
+      const session = getSession();
+      if (!session?.access_token) throw new Error('Please sign in again before sending the proof of delivery.');
+      const response = await fetch('/api/proof-of-delivery', {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer ' + session.access_token, 'Content-Type':'application/json' },
+        body:JSON.stringify({ orderNumber })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || 'The proof of delivery email could not be sent.');
+      return data;
+    }
+
     function startIdleTimer() {
       window.clearTimeout(idleTimer);
       if (!getSession()?.access_token) return;
@@ -1029,7 +1048,7 @@
       showView(accountView);
       try { await loadBasket(); } catch (error) { showToast(error.message); }
       startIdleTimer();
-      if (currentPath() !== '/') window.setTimeout(routeCurrentPath, 0);
+      if (currentPath() !== '/' || window.location.search) window.setTimeout(routeCurrentPath, 0);
     }
 
     function renderProducts(products) {
@@ -1045,12 +1064,15 @@
       }));
     }
 
-    function openCatalogue(category) {
+    function openCatalogue(category, push=true) {
       currentCategory = category;
+      if (push) setPath('/?category=' + encodeURIComponent(category));
       const products = category === 'Stationery' ? stationeryProducts : category === 'Merchandise' ? merchandiseProducts : category === 'Signage' ? signageProducts : printProducts;
       document.querySelector('#print-list-view .topline').textContent = category + ' resources';
       document.getElementById('print-list-heading').textContent = category + ' products';
       document.querySelector('#print-list-view .catalogue-header .intro').textContent = 'Select a product to view its details, options and quantity pricing.';
+      document.getElementById('enquiry-intro').textContent = 'Need a bespoke ' + category.toLowerCase() + ' item that is not listed above? Complete the form and we will prepare a quote.';
+      document.getElementById('enquiry-subject').placeholder = category + ' product or item';
       renderProducts(products);
       showView(printListView);
     }
@@ -1062,10 +1084,16 @@
 
     function renderProductFields(product) {
       const container = document.getElementById('product-config-fields');
-      if (product.category !== 'Stationery') { container.replaceChildren(); return; }
       const field = (id, label, type='text', full=false, required=true) => '<div class="' + (full ? 'full' : '') + '"><label for="' + id + '">' + label + '</label><input class="product-config-input" id="' + id + '" data-label="' + label + '" type="' + type + '" ' + (required ? 'required' : '') + '></div>';
       let html = '<div class="config-grid">';
-      if (product.form === 'business-card') {
+      if (product.form === 'personalised-name') {
+        html += '<div class="full"><label for="config-names">Personalised name(s)</label><textarea class="product-config-input" id="config-names" data-label="Personalised name(s)" placeholder="Enter one name per backpack" required></textarea></div>';
+      } else if (product.form === 'colour') {
+        html += field('config-colours','Preferred colour(s)', 'text', true);
+      } else if (product.form === 'cheque') {
+        html += field('config-payee','Payee / recipient') + field('config-amount','Cheque amount') + field('config-date','Presentation date','date');
+        html += '<div class="full"><label for="config-wording">Wording and personalisation details</label><textarea class="product-config-input" id="config-wording" data-label="Wording and personalisation details" required></textarea></div>';
+      } else if (product.form === 'business-card') {
         html += field('config-name','Name') + field('config-job-title','Job title') + field('config-department','Department') + field('config-ddi','DDI', 'tel', false, false) + field('config-mobile','Mobile', 'tel', false, false) + field('config-telephone','Telephone', 'tel', false, false) + field('config-email','Email address','email');
         html += '<div class="checkbox-field"><input class="product-config-input" id="config-international" data-label="International" type="checkbox"><label for="config-international">International</label></div>';
       } else if (product.form === 'badge') {
@@ -1073,12 +1101,15 @@
       } else if (product.form === 'table-card') {
         html += '<div class="full"><label for="config-names">Names</label><textarea class="product-config-input" id="config-names" data-label="Names" required></textarea></div>';
       }
-      html += '<div class="full"><label for="config-office">Site / office</label><select class="product-config-input" id="config-office" data-label="Site / office" required><option value="">Select a location</option>' + officeLocations.map(location => '<option value="' + escapeHtml(location) + '">' + escapeHtml(location) + '</option>').join('') + '</select></div></div>';
+      if (product.category === 'Stationery') html += '<div class="full"><label for="config-office">Site / office</label><select class="product-config-input" id="config-office" data-label="Site / office" required><option value="">Select a location</option>' + officeLocations.map(location => '<option value="' + escapeHtml(location) + '">' + escapeHtml(location) + '</option>').join('') + '</select></div>';
+      if (!product.form && product.category !== 'Stationery') { container.replaceChildren(); return; }
+      html += '</div>';
       container.innerHTML = html;
     }
 
-    function openProduct(product) {
+    function openProduct(product, push=true) {
       selectedProduct = product;
+      if (push) setPath('/?category=' + encodeURIComponent(product.category) + '&product=' + encodeURIComponent(product.code));
       document.getElementById('product-image').src = product.image;
       document.getElementById('product-image').alt = product.title;
       document.getElementById('product-code').textContent = 'Service code ' + product.code;
@@ -1382,7 +1413,7 @@
     }
 
     function setPath(path, replace=false) {
-      if (currentPath() === path) return;
+      if ((currentPath() + window.location.search) === path) return;
       history[replace ? 'replaceState' : 'pushState']({}, '', path);
     }
 
@@ -1482,7 +1513,7 @@
     function openOrderDetail(orderNumber, adminMode=false) {
       const order = orders.find(entry => entry.number === orderNumber);
       if (!order) return;
-      const adminControls = adminMode ? '<div class="admin-order-actions"><div><label for="detail-order-status">Quote status</label><select id="detail-order-status">' + orderStatuses.map(status => '<option' + ((order.status || 'New quote') === status ? ' selected' : '') + '>' + status + '</option>').join('') + '</select></div><div><label for="detail-po-number">Purchase order</label><input id="detail-po-number" type="text" value="' + escapeHtml(order.purchaseOrder || '') + '" placeholder="Enter PO number"><button class="file-link" id="save-purchase-order" type="button">Save purchase order</button></div><div><label for="detail-delivery-note">Upload delivery note</label><input id="detail-delivery-note" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-delivery-note" type="button">Attach delivery note</button>' + (order.deliveryNotePath ? '<br><button class="file-link download-file" type="button" data-file-path="' + escapeHtml(order.deliveryNotePath) + '" data-file-name="' + escapeHtml(order.deliveryNoteName || 'delivery-note') + '">Download ' + escapeHtml(order.deliveryNoteName || 'delivery note') + '</button>' : '') + '</div><div><label for="detail-proof-of-delivery">Upload proof of delivery</label><input id="detail-proof-of-delivery" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-proof-of-delivery" type="button">Attach proof of delivery</button>' + (order.proofOfDeliveryPath ? '<br><span class="basket-meta">Current: ' + escapeHtml(order.proofOfDeliveryName || 'proof of delivery') + '</span>' : '') + '</div></div>' : '';
+      const adminControls = adminMode ? '<div class="admin-order-actions"><div><label for="detail-order-status">Quote status</label><select id="detail-order-status">' + orderStatuses.map(status => '<option' + ((order.status || 'New quote') === status ? ' selected' : '') + '>' + status + '</option>').join('') + '</select></div><div><label for="detail-po-number">Purchase order</label><input id="detail-po-number" type="text" value="' + escapeHtml(order.purchaseOrder || '') + '" placeholder="Enter PO number"><button class="file-link" id="save-purchase-order" type="button">Save purchase order</button></div><div><label for="detail-delivery-note">Upload delivery note</label><input id="detail-delivery-note" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-delivery-note" type="button">Attach delivery note</button>' + (order.deliveryNotePath ? '<br><button class="file-link download-file" type="button" data-file-path="' + escapeHtml(order.deliveryNotePath) + '" data-file-name="' + escapeHtml(order.deliveryNoteName || 'delivery-note') + '">Download ' + escapeHtml(order.deliveryNoteName || 'delivery note') + '</button>' : '') + '</div><div><label for="detail-proof-of-delivery">Upload proof of delivery</label><input id="detail-proof-of-delivery" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-proof-of-delivery" type="button">Attach and email proof of delivery</button>' + (order.proofOfDeliveryPath ? '<br><span class="basket-meta">Current: ' + escapeHtml(order.proofOfDeliveryName || 'proof of delivery') + '</span>' : '') + '</div></div>' : '';
       document.getElementById('order-detail-heading').textContent = order.number;
       const proofOfDeliveryButton = order.proofOfDeliveryPath ? '<button class="document-button open-order-file" type="button" data-file-path="' + escapeHtml(order.proofOfDeliveryPath) + '">Proof of delivery</button>' : '';
       const quoteButton = String(order.number || '').startsWith('QU-') ? '<button class="document-button view-quote-document" type="button">View quote</button>' : '';
@@ -1510,11 +1541,16 @@
         document.getElementById('save-proof-of-delivery').addEventListener('click', async () => {
           const file = document.getElementById('detail-proof-of-delivery').files[0];
           if (!file) { showToast('Choose a proof of delivery file first.'); return; }
+          if (file.size > 20 * 1024 * 1024) { showToast('Choose a proof of delivery file smaller than 20 MB.'); return; }
           try {
             const storagePath = await uploadOrderFile(file, 'proof-of-delivery/' + order.id);
             await supabaseRest('order_files', { method:'POST', body:{ order_id:order.id, owner_id:currentUser.id, kind:'proof_of_delivery', file_name:file.name, storage_path:storagePath, mime_type:file.type || 'application/octet-stream' } });
-            await loadOrders(); openOrderDetail(order.number, true); showToast('Proof of delivery attached.');
-          } catch (error) { showToast(error.message); }
+            let emailError = '';
+            try { await sendProofOfDelivery(order.number); }
+            catch (error) { emailError = error.message; }
+            await loadOrders(); openOrderDetail(order.number, true);
+            showToast(emailError ? 'Proof of delivery attached, but the email could not be sent. ' + emailError : 'Proof of delivery attached and emailed to ' + order.customerEmail + '.');
+          } catch (error) { showToast('The proof of delivery could not be attached. ' + error.message); }
         });
       }
       if (!dialog.open) dialog.showModal();
@@ -1606,6 +1642,17 @@
 
     function routeCurrentPath() {
       const path = currentPath();
+      if (path === '/') {
+        if (!currentUser) return;
+        const params = new URLSearchParams(window.location.search);
+        const category = params.get('category');
+        const code = params.get('product');
+        const product = code ? [...printProducts, ...signageProducts, ...stationeryProducts, ...merchandiseProducts].find(item => item.code === code) : null;
+        if (product) { currentCategory = product.category; openProduct(product, false); }
+        else if (['Printing','Signage','Stationery','Merchandise'].includes(category)) openCatalogue(category, false);
+        else showView(accountView);
+        return;
+      }
       if (path === '/basket') openBasket(false);
       else if (path === '/checkout') openCheckout(false);
       else if (path === '/orders') openOrders(false);
@@ -1626,7 +1673,7 @@
     ['admin-status-filter','admin-date-from','admin-date-to'].forEach(id => document.getElementById(id).addEventListener('change', renderAdminOrders));
     document.getElementById('close-order-dialog').addEventListener('click', () => document.getElementById('order-detail-dialog').close());
     document.getElementById('order-detail-dialog').addEventListener('click', event => { if (event.target === event.currentTarget) event.currentTarget.close(); });
-    document.getElementById('continue-shopping').addEventListener('click', () => { setPath('/'); openCatalogue(currentCategory); });
+    document.getElementById('continue-shopping').addEventListener('click', () => openCatalogue(currentCategory));
     document.getElementById('continue-to-delivery').addEventListener('click', () => openCheckout());
     document.getElementById('back-to-basket').addEventListener('click', () => openBasket());
     document.getElementById('delivery-address').addEventListener('change', updateCheckoutTotals);
@@ -1687,7 +1734,9 @@
       if (!form.reportValidity()) return;
       const enquiry = Object.fromEntries(new FormData(form).entries());
       try {
-        await supabaseRest('enquiries', { method:'POST', body:{ user_id:currentUser.id, name:enquiry.name, email:enquiry.email, subject:enquiry.subject, details:enquiry.details || null } });
+        const categorySubject = currentCategory + ' bespoke item — ' + enquiry.subject;
+        const requestDetails = 'Estimated quantity: ' + enquiry.quantity + (enquiry.details ? '\n\n' + enquiry.details : '');
+        await supabaseRest('enquiries', { method:'POST', body:{ user_id:currentUser.id, name:enquiry.name, email:enquiry.email, subject:categorySubject, details:requestDetails } });
         form.reset(); document.getElementById('enquiry-name').value = currentProfile?.full_name || currentUser?.email?.split('@')[0] || '';
         document.getElementById('enquiry-email').value = currentUser?.email || '';
         showToast('Your enquiry has been submitted.');

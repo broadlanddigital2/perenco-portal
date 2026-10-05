@@ -1048,7 +1048,7 @@
       showView(accountView);
       try { await loadBasket(); } catch (error) { showToast(error.message); }
       startIdleTimer();
-      if (currentPath() !== '/') window.setTimeout(routeCurrentPath, 0);
+      if (currentPath() !== '/' || window.location.search) window.setTimeout(routeCurrentPath, 0);
     }
 
     function renderProducts(products) {
@@ -1064,8 +1064,9 @@
       }));
     }
 
-    function openCatalogue(category) {
+    function openCatalogue(category, push=true) {
       currentCategory = category;
+      if (push) setPath('/?category=' + encodeURIComponent(category));
       const products = category === 'Stationery' ? stationeryProducts : category === 'Merchandise' ? merchandiseProducts : category === 'Signage' ? signageProducts : printProducts;
       document.querySelector('#print-list-view .topline').textContent = category + ' resources';
       document.getElementById('print-list-heading').textContent = category + ' products';
@@ -1106,8 +1107,9 @@
       container.innerHTML = html;
     }
 
-    function openProduct(product) {
+    function openProduct(product, push=true) {
       selectedProduct = product;
+      if (push) setPath('/?category=' + encodeURIComponent(product.category) + '&product=' + encodeURIComponent(product.code));
       document.getElementById('product-image').src = product.image;
       document.getElementById('product-image').alt = product.title;
       document.getElementById('product-code').textContent = 'Service code ' + product.code;
@@ -1411,7 +1413,7 @@
     }
 
     function setPath(path, replace=false) {
-      if (currentPath() === path) return;
+      if ((currentPath() + window.location.search) === path) return;
       history[replace ? 'replaceState' : 'pushState']({}, '', path);
     }
 
@@ -1640,6 +1642,17 @@
 
     function routeCurrentPath() {
       const path = currentPath();
+      if (path === '/') {
+        if (!currentUser) return;
+        const params = new URLSearchParams(window.location.search);
+        const category = params.get('category');
+        const code = params.get('product');
+        const product = code ? [...printProducts, ...signageProducts, ...stationeryProducts, ...merchandiseProducts].find(item => item.code === code) : null;
+        if (product) { currentCategory = product.category; openProduct(product, false); }
+        else if (['Printing','Signage','Stationery','Merchandise'].includes(category)) openCatalogue(category, false);
+        else showView(accountView);
+        return;
+      }
       if (path === '/basket') openBasket(false);
       else if (path === '/checkout') openCheckout(false);
       else if (path === '/orders') openOrders(false);
@@ -1660,7 +1673,7 @@
     ['admin-status-filter','admin-date-from','admin-date-to'].forEach(id => document.getElementById(id).addEventListener('change', renderAdminOrders));
     document.getElementById('close-order-dialog').addEventListener('click', () => document.getElementById('order-detail-dialog').close());
     document.getElementById('order-detail-dialog').addEventListener('click', event => { if (event.target === event.currentTarget) event.currentTarget.close(); });
-    document.getElementById('continue-shopping').addEventListener('click', () => { setPath('/'); openCatalogue(currentCategory); });
+    document.getElementById('continue-shopping').addEventListener('click', () => openCatalogue(currentCategory));
     document.getElementById('continue-to-delivery').addEventListener('click', () => openCheckout());
     document.getElementById('back-to-basket').addEventListener('click', () => openBasket());
     document.getElementById('delivery-address').addEventListener('change', updateCheckoutTotals);
