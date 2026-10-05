@@ -3,6 +3,13 @@ const SUPABASE_KEY = 'sb_publishable_f15OX7M1w9ID5GHXNezGig_Bk0aoF-8';
 const FROM_EMAIL = 'noreply@broadlanddigital.co.uk';
 const SUPPLIER_EMAIL = 'chris@broadlanddigital.co.uk';
 
+const ZERO_RATED_CODES = ['PRN-021'];
+const isZeroRated = code => ZERO_RATED_CODES.includes(code);
+function vatOn(order) {
+  const vatable = (order.order_items || []).reduce((total,item) => total + (isZeroRated(item.product_code) ? 0 : Number(item.price || 0)), 0) + Number(order.delivery_cost || 0);
+  return Math.round(vatable * .2 * 100) / 100;
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({
     '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
@@ -31,7 +38,7 @@ function textOptions(options) {
 
 function orderHtml(order, customerName, supplierCopy=false, hasLogo=false) {
   const exVatTotal = Number(order.subtotal || 0) + Number(order.delivery_cost || 0);
-  const vat = exVatTotal * .2;
+  const vat = vatOn(order);
   const items = (order.order_items || []).map(item => `
     <tr>
       <td style="padding:16px 12px;border-bottom:1px solid #e3e8ee;vertical-align:top">
@@ -83,7 +90,7 @@ function orderHtml(order, customerName, supplierCopy=false, hasLogo=false) {
 
 function orderText(order, customerName, supplierCopy=false) {
   const exVatTotal = Number(order.subtotal || 0) + Number(order.delivery_cost || 0);
-  const vat = exVatTotal * .2;
+  const vat = vatOn(order);
   const lines = (order.order_items || []).map(item => {
     const options = textOptions(item.options);
     return `- ${item.title} (${item.product_code})\n  Quantity: ${item.quantity}\n  Price: ${money(item.price)}${options ? `\n${options}` : ''}`;
@@ -245,7 +252,7 @@ function generateQuotePdf(order, logoBytes) {
 
   const pageRefs = [];
   const exVatTotal = Number(order.subtotal || 0) + Number(order.delivery_cost || 0);
-  const vat = exVatTotal * .2;
+  const vat = vatOn(order);
   const total = exVatTotal + vat;
   const created = new Date(order.created_at);
   const expiry = order.quote_valid_until ? new Date(order.quote_valid_until + 'T12:00:00Z') : new Date(created.getTime() + 30 * 86400000);
@@ -299,7 +306,7 @@ function generateQuotePdf(order, logoBytes) {
       const unit = amount == null ? null : amount / Math.max(1,Number(item.quantity || 1));
       rightText(commands,360,y,8.5,Number(item.quantity || 0).toLocaleString('en-GB'));
       rightText(commands,445,y,8.5,amount == null ? 'TBC' : pdfAmount(unit));
-      rightText(commands,490,y,8.5,'20%');
+      rightText(commands,490,y,8.5,isZeroRated(item.product_code) ? '0%' : '20%');
       rightText(commands,548,y,8.5,amount == null ? 'TBC' : pdfAmount(amount));
       y -= 38;
       line(commands,48,y+11,548,y+11,.25);

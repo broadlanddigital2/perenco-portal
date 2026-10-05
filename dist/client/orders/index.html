@@ -687,12 +687,19 @@
       return { method:select.value, cost:Number(option?.dataset.cost || 0) };
     }
 
+    const ZERO_RATED_CODES = ['PRN-021'];
+    const isZeroRated = code => ZERO_RATED_CODES.includes(code);
+    function vatOn(items, deliveryCost) {
+      const vatable = (items || []).reduce((total,item) => total + (isZeroRated(item.code) ? 0 : Number(item.price || 0)), 0) + Number(deliveryCost || 0);
+      return Math.round(vatable * .2 * 100) / 100;
+    }
+
     function updateCheckoutTotals() {
       const subtotal = basket.reduce((total,item) => total + (item.price || 0), 0);
       const hasPending = basket.some(item => item.price == null);
       const delivery = selectedDelivery();
       const exVatTotal = subtotal + delivery.cost;
-      const vat = exVatTotal * .2;
+      const vat = vatOn(basket, delivery.cost);
       const pendingLabel = hasPending ? ' + prices TBC' : '';
       document.getElementById('checkout-subtotal').textContent = formatMoney(subtotal) + pendingLabel;
       document.getElementById('checkout-delivery-cost').textContent = delivery.method ? formatMoney(delivery.cost) : 'Select a location';
@@ -1172,7 +1179,7 @@
       const price = priceFor(selectedProduct, quantity);
       const money = value => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(value);
       const unit = unitPriceFor(selectedProduct, quantity);
-      document.getElementById('product-price-value').textContent = price == null ? 'Price to be confirmed' : money(price) + (unit != null ? ' (' + money(unit) + ' each)' : '');
+      document.getElementById('product-price-value').textContent = price == null ? 'Price to be confirmed' : money(price) + (unit != null ? ' (' + money(unit) + ' each)' : '') + (isZeroRated(selectedProduct.code) ? ' – no VAT' : '');
       box.classList.add('show');
     }
 
@@ -1505,7 +1512,7 @@
 
     function quoteDocumentHtml(order) {
       const exVatTotal = Number(order.subtotal || 0) + Number(order.deliveryCost || 0);
-      const vat = exVatTotal * .2;
+      const vat = vatOn(order.items, order.deliveryCost);
       const total = exVatTotal + vat;
       const hasPending = (order.items || []).some(item => item.price == null);
       const date = new Date(order.createdAt);
@@ -1517,7 +1524,7 @@
         const detail = Object.entries(item.options || {}).filter(([,value]) => value).map(([key,value]) => '<br><span class="detail">' + escapeHtml(key) + ': ' + escapeHtml(value) + '</span>').join('');
         const priceLabel = item.price == null ? 'TBC' : formatMoney(unitPrice);
         const amountLabel = item.price == null ? 'TBC' : formatMoney(amount);
-        return '<tr><td>' + escapeHtml(item.title) + detail + '</td><td class="number">' + Number(item.quantity).toLocaleString('en-GB') + '</td><td class="number">' + priceLabel + '</td><td class="number">20%</td><td class="number">' + amountLabel + '</td></tr>';
+        return '<tr><td>' + escapeHtml(item.title) + detail + '</td><td class="number">' + Number(item.quantity).toLocaleString('en-GB') + '</td><td class="number">' + priceLabel + '</td><td class="number">' + (isZeroRated(item.code) ? '0%' : '20%') + '</td><td class="number">' + amountLabel + '</td></tr>';
       }).join('');
       const deliveryRow = order.deliveryCost ? '<tr><td>Delivery - ' + escapeHtml(order.deliveryAddress) + '</td><td class="number">1</td><td class="number">' + formatMoney(order.deliveryCost) + '</td><td class="number">20%</td><td class="number">' + formatMoney(order.deliveryCost) + '</td></tr>' : '';
       return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(order.number)} - Perenco quote</title>
@@ -1528,7 +1535,7 @@
         <div class="meta"><strong>Date</strong>${display(date)}<strong>Expiry</strong>${display(validUntil)}<strong>Quote Number</strong>${escapeHtml(order.number)}<strong>Reference</strong>${escapeHtml(order.contactName || order.contactEmail || 'Perenco portal')}<strong>VAT Number</strong>825861607</div>
         <div class="supplier"><img src="/broadland-digital-logo.png" alt="Broadland Digital"><strong>Broadland Digital Limited</strong><br>Unit 14 Vulcan House<br>Vulcan Road North<br>Norwich<br>NR6 6AQ</div></section>
         <table class="items"><thead><tr><th>Description</th><th class="number">Quantity</th><th class="number">Unit Price</th><th class="number">VAT</th><th class="number">Amount GBP</th></tr></thead><tbody>${itemRows}${deliveryRow}</tbody></table>
-        <div style="display:flex;align-items:flex-start"><div class="vat-note">All prices are exclusive of VAT, which will be charged at the current prevailing rate</div><table class="totals"><tr><td>Subtotal</td><td>${formatMoney(exVatTotal)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr><td>TOTAL VAT 20%</td><td>${formatMoney(vat)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr class="total"><td>TOTAL GBP</td><td>${escapeHtml(order.totalLabel || formatMoney(total))}</td></tr></table></div>
+        <div style="display:flex;align-items:flex-start"><div class="vat-note">All prices are exclusive of VAT, which will be charged at the current prevailing rate${(order.items || []).some(item => isZeroRated(item.code)) ? '. Items marked 0% are zero-rated' : ''}</div><table class="totals"><tr><td>Subtotal</td><td>${formatMoney(exVatTotal)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr><td>TOTAL VAT 20%</td><td>${formatMoney(vat)}${hasPending ? ' + prices TBC' : ''}</td></tr><tr class="total"><td>TOTAL GBP</td><td>${escapeHtml(order.totalLabel || formatMoney(total))}</td></tr></table></div>
         <section class="terms"><h2>Terms</h2><p>Payment on receipt of invoice or 30 days net when on account.</p><p>Bank Transfer to: Lloyds Bank Acc No: 04213365 Sort Code: 30-96-17</p><p>Unless queries are raised within 7 days of receipt of any invoice, it shall be taken that services and good have been received as stated and full paymentwill be made as per our terms.</p><p>The company reserves the right to charge interest on overdue accounts using the Late Payment of Commercial Debts (interest) Act. Design work iscovered by copyright law.</p><p>Full terms and conditions are available at <a href="http://broadlanddigital.co.uk">broadlanddigital.co.uk</a></p></section>
         <footer class="footer">Company Registration No: 04802472. Registered Office: Unit 14 Vulcan House, Vulcan Road North, Norwich, NR6 6AQ.</footer>
       </main></body></html>`;
@@ -1728,7 +1735,7 @@
       const subtotal = basket.reduce((total,item) => total + (item.price || 0), 0);
       const delivery = selectedDelivery();
       const exVatTotal = subtotal + delivery.cost;
-      const numericTotal = exVatTotal * 1.2;
+      const numericTotal = exVatTotal + vatOn(basket, delivery.cost);
       const hasPending = basket.some(item => item.price == null);
       setBusy(form, true);
       try {
