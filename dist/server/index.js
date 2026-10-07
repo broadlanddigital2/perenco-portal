@@ -3,7 +3,7 @@ const SUPABASE_KEY = 'sb_publishable_f15OX7M1w9ID5GHXNezGig_Bk0aoF-8';
 const FROM_EMAIL = 'noreply@broadlanddigital.co.uk';
 const SUPPLIER_EMAIL = 'chris@broadlanddigital.co.uk';
 
-const ZERO_RATED_CODES = ['PRN-021'];
+const ZERO_RATED_CODES = ['PRN-001','PRN-002','PRN-008','PRN-009','PRN-011','PRN-012','PRN-013','PRN-014','PRN-021','PRN-022','PRN-023'];
 const isZeroRated = code => ZERO_RATED_CODES.includes(code);
 function vatOn(order) {
   const vatable = (order.order_items || []).reduce((total,item) => total + (isZeroRated(item.product_code) ? 0 : Number(item.price || 0)), 0) + Number(order.delivery_cost || 0);
@@ -255,7 +255,7 @@ function generateQuotePdf(order, logoBytes) {
   const vat = vatOn(order);
   const total = exVatTotal + vat;
   const created = new Date(order.created_at);
-  const expiry = order.quote_valid_until ? new Date(order.quote_valid_until + 'T12:00:00Z') : new Date(created.getTime() + 30 * 86400000);
+  const expiry = order.quote_valid_until ? new Date(order.quote_valid_until + 'T12:00:00Z') : new Date(created.getTime() + 14 * 86400000);
   const text = (commands, x, y, size, value, bold=false) => commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfSafe(value)}) Tj ET`);
   const rightText = (commands, right, y, size, value, bold=false) => {
     const safe = pdfSafe(value);
@@ -393,7 +393,8 @@ async function handleProofOfDelivery(request, env) {
   const orderResponse = await fetch(`${SUPABASE_URL}/rest/v1/orders?${orderQuery}`, { headers:authHeaders });
   if (!orderResponse.ok) return Response.json({ message:'The saved order could not be loaded.' }, { status:502 });
   const [order] = await orderResponse.json();
-  if (!order?.customer_email) return Response.json({ message:'The email address that placed this order could not be found.' }, { status:404 });
+  const recipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(order?.quote_contact_email || '') ? order.quote_contact_email : order?.customer_email;
+  if (!recipient) return Response.json({ message:'The email address that placed this order could not be found.' }, { status:404 });
 
   const fileQuery = new URLSearchParams({ select:'*', order_id:`eq.${order.id}`, kind:'eq.proof_of_delivery', order:'created_at.desc', limit:'1' });
   const fileResponse = await fetch(`${SUPABASE_URL}/rest/v1/order_files?${fileQuery}`, { headers:authHeaders });
@@ -421,7 +422,7 @@ async function handleProofOfDelivery(request, env) {
   const mimeType = /^[\w.+-]+\/[\w.+-]+$/.test(proofFile.mime_type || '') ? proofFile.mime_type : 'application/octet-stream';
   await sendEmail(
     env,
-    order.customer_email,
+    recipient,
     `Proof of delivery – ${order.order_number}`,
     proofOfDeliveryHtml(order, Boolean(logoContent)),
     proofOfDeliveryText(order),
@@ -430,7 +431,7 @@ async function handleProofOfDelivery(request, env) {
     order.order_number,
     [{ content:base64FromBuffer(attachmentBuffer), filename:fileName, type:mimeType, disposition:'attachment' }]
   );
-  return Response.json({ sent:true, recipient:order.customer_email });
+  return Response.json({ sent:true, recipient });
 }
 
 async function handleOrderConfirmation(request, env) {

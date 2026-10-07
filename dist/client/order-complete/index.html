@@ -123,6 +123,8 @@
     .product-card:focus-visible { outline:3px solid rgba(57,118,173,.35); outline-offset:3px; }
     .product-card img { display:block; width:100%; aspect-ratio:1; padding:10px; object-fit:contain; background:var(--wash); }
     .product-card-body { display:block; padding:15px; }
+    .bespoke-card { border-style:dashed; border-color:#9fb3c7; }
+    .bespoke-card-visual { display:flex; align-items:center; justify-content:center; width:100%; aspect-ratio:1; background:linear-gradient(145deg, #071a30, #0b2746); color:#fff; font-size:4rem; font-weight:300; line-height:1; }
     .product-card-title { display:block; min-height:2.7em; color:var(--ink); font-size:.94rem; font-weight:720; line-height:1.35; }
     .service-code { display:inline-block; margin-top:10px; color:#66717d; font-size:.72rem; font-weight:760; letter-spacing:.08em; text-transform:uppercase; }
     .enquiry-panel { margin-top:42px; padding:30px; border-radius:18px; color:#fff; background:linear-gradient(145deg, #071a30, #0b2746); }
@@ -592,7 +594,7 @@
           </div>
           <section class="admin-panel" id="admin-orders-panel">
             <div class="admin-filters">
-              <div><label for="admin-status-filter">Quote status</label><select id="admin-status-filter"><option value="">All statuses</option><option>New quote</option><option>Pending</option><option>Accepted</option><option>PO added</option><option>Delivered</option><option>Delivery Note attached</option><option>Expired</option></select></div>
+              <div><label for="admin-status-filter">Quote status</label><select id="admin-status-filter"><option value="">All statuses</option><option>New quote</option><option>Pending</option><option>Accepted</option><option>PO added</option><option>Delivered</option><option>Expired</option></select></div>
               <div><label for="admin-date-from">From date</label><input id="admin-date-from" type="date"></div>
               <div><label for="admin-date-to">To date</label><input id="admin-date-to" type="date"></div>
             </div>
@@ -677,7 +679,7 @@
       { name:'Delivery Gt Yarmouth', cost:15 },
       { name:'Delivery Mainland UK (excluding highlands)', cost:20 }
     ];
-    const orderStatuses = ['New quote','Pending','Accepted','PO added','Delivered','Delivery Note attached','Expired'];
+    const orderStatuses = ['New quote','Pending','Accepted','PO added','Delivered','Expired'];
 
     function formatMoney(value) { return new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(Number(value) || 0); }
 
@@ -687,7 +689,7 @@
       return { method:select.value, cost:Number(option?.dataset.cost || 0) };
     }
 
-    const ZERO_RATED_CODES = ['PRN-021'];
+    const ZERO_RATED_CODES = ['PRN-001','PRN-002','PRN-008','PRN-009','PRN-011','PRN-012','PRN-013','PRN-014','PRN-021','PRN-022','PRN-023'];
     const isZeroRated = code => ZERO_RATED_CODES.includes(code);
     function vatOn(items, deliveryCost) {
       const vatable = (items || []).reduce((total,item) => total + (isZeroRated(item.code) ? 0 : Number(item.price || 0)), 0) + Number(deliveryCost || 0);
@@ -907,7 +909,7 @@
       if (enabled) {
         document.getElementById('brand-eyebrow').textContent = 'Supplier administration';
         document.getElementById('brand-heading').textContent = 'Quote management backend';
-        document.getElementById('brand-description').textContent = 'Authorised suppliers can review quotes, manage branch accounts, attach purchase orders and upload delivery notes.';
+        document.getElementById('brand-description').textContent = 'Authorised suppliers can review quotes, manage branch accounts, attach purchase orders and upload proof of delivery.';
         heading.textContent = 'Admin sign in';
         intro.textContent = 'Sign in with your supplier administrator account.';
         loginTab.textContent = 'Admin sign in';
@@ -1074,7 +1076,19 @@
         button.innerHTML = '<img src="' + product.image + '" alt="' + product.title.replaceAll('"', '&quot;') + '"><span class="product-card-body"><span class="product-card-title">' + product.title + '</span><span class="service-code">' + product.code + '</span></span>';
         button.addEventListener('click', () => openProduct(product));
         return button;
-      }));
+      }), bespokeCard());
+    }
+
+    function bespokeCard() {
+      const button = document.createElement('button');
+      button.className = 'product-card bespoke-card';
+      button.type = 'button';
+      button.innerHTML = '<span class="bespoke-card-visual" aria-hidden="true">+</span><span class="product-card-body"><span class="product-card-title">Bespoke item quote request</span><span class="service-code">Can\'t see what you need? Ask us for a quote</span></span>';
+      button.addEventListener('click', () => {
+        document.getElementById('print-enquiry').scrollIntoView({ behavior:'smooth', block:'start' });
+        window.setTimeout(() => document.getElementById('enquiry-subject').focus({ preventScroll:true }), 450);
+      });
+      return button;
     }
 
     function openCatalogue(category, push=true) {
@@ -1474,6 +1488,13 @@
       showView(checkoutView);
     }
 
+    function quoteStatus(row) {
+      const status = row.status || 'New quote';
+      if (!['New quote','Pending','New orders'].includes(status) || row.purchase_order) return status;
+      const expiry = row.quote_valid_until ? new Date(row.quote_valid_until + 'T23:59:59') : new Date(new Date(row.created_at).getTime() + 14 * 86400000);
+      return expiry < new Date() ? 'Expired' : status;
+    }
+
     function mapOrder(row) {
       const files = row.order_files || [];
       const items = (row.order_items || []).map(item => {
@@ -1482,7 +1503,7 @@
       });
       const deliveryNote = files.find(file => file.kind === 'delivery_note');
       const proofOfDelivery = files.filter(file => file.kind === 'proof_of_delivery').sort((a,b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))).pop();
-      return { id:row.id, number:row.order_number, createdAt:row.created_at, updatedAt:row.updated_at, validUntil:row.quote_valid_until, status:row.status, customerEmail:row.customer_email, contactName:row.quote_contact_name || '', contactEmail:row.quote_contact_email || '', deliveryAddress:row.delivery_method || row.delivery_address, deliveryCost:Number(row.delivery_cost || 0), subtotal:Number(row.subtotal || 0), hasDeliveryBreakdown:Boolean(row.delivery_method), notes:row.notes || '', purchaseOrder:row.purchase_order || '', totalLabel:row.total_label || 'POA', items, deliveryNotePath:deliveryNote?.storage_path || '', deliveryNoteName:deliveryNote?.file_name || '', proofOfDeliveryPath:proofOfDelivery?.storage_path || '', proofOfDeliveryName:proofOfDelivery?.file_name || '' };
+      return { id:row.id, number:row.order_number, createdAt:row.created_at, updatedAt:row.updated_at, validUntil:row.quote_valid_until, status:quoteStatus(row), customerEmail:row.customer_email, contactName:row.quote_contact_name || '', contactEmail:row.quote_contact_email || '', deliveryAddress:row.delivery_method || row.delivery_address, deliveryCost:Number(row.delivery_cost || 0), subtotal:Number(row.subtotal || 0), hasDeliveryBreakdown:Boolean(row.delivery_method), notes:row.notes || '', purchaseOrder:row.purchase_order || '', totalLabel:row.total_label || 'POA', items, deliveryNotePath:deliveryNote?.storage_path || '', deliveryNoteName:deliveryNote?.file_name || '', proofOfDeliveryPath:proofOfDelivery?.storage_path || '', proofOfDeliveryName:proofOfDelivery?.file_name || '' };
     }
 
     async function loadOrders() {
@@ -1516,7 +1537,7 @@
       const total = exVatTotal + vat;
       const hasPending = (order.items || []).some(item => item.price == null);
       const date = new Date(order.createdAt);
-      const validUntil = order.validUntil ? new Date(order.validUntil + 'T12:00:00') : new Date(date.getTime() + 30 * 86400000);
+      const validUntil = order.validUntil ? new Date(order.validUntil + 'T12:00:00') : new Date(date.getTime() + 14 * 86400000);
       const display = value => escapeHtml(new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric'}).format(value));
       const itemRows = (order.items || []).map(item => {
         const amount = Number(item.price || 0);
@@ -1554,7 +1575,7 @@
     function openOrderDetail(orderNumber, adminMode=false) {
       const order = orders.find(entry => entry.number === orderNumber);
       if (!order) return;
-      const adminControls = adminMode ? '<div class="admin-order-actions"><div><label for="detail-order-status">Quote status</label><select id="detail-order-status">' + orderStatuses.map(status => '<option' + ((order.status || 'New quote') === status ? ' selected' : '') + '>' + status + '</option>').join('') + '</select></div><div><label for="detail-po-number">Purchase order</label><input id="detail-po-number" type="text" value="' + escapeHtml(order.purchaseOrder || '') + '" placeholder="Enter PO number"><button class="file-link" id="save-purchase-order" type="button">Save purchase order</button></div><div><label for="detail-delivery-note">Upload delivery note</label><input id="detail-delivery-note" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-delivery-note" type="button">Attach delivery note</button>' + (order.deliveryNotePath ? '<br><button class="file-link download-file" type="button" data-file-path="' + escapeHtml(order.deliveryNotePath) + '" data-file-name="' + escapeHtml(order.deliveryNoteName || 'delivery-note') + '">Download ' + escapeHtml(order.deliveryNoteName || 'delivery note') + '</button>' : '') + '</div><div><label for="detail-proof-of-delivery">Upload proof of delivery</label><input id="detail-proof-of-delivery" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-proof-of-delivery" type="button">Attach and email proof of delivery</button>' + (order.proofOfDeliveryPath ? '<br><span class="basket-meta">Current: ' + escapeHtml(order.proofOfDeliveryName || 'proof of delivery') + '</span>' : '') + '</div></div>' : '';
+      const adminControls = adminMode ? '<div class="admin-order-actions"><div><label for="detail-order-status">Quote status</label><select id="detail-order-status">' + (orderStatuses.includes(order.status || 'New quote') ? orderStatuses : [order.status, ...orderStatuses]).map(status => '<option' + ((order.status || 'New quote') === status ? ' selected' : '') + '>' + escapeHtml(status) + '</option>').join('') + '</select></div><div><label for="detail-po-number">Purchase order</label><input id="detail-po-number" type="text" value="' + escapeHtml(order.purchaseOrder || '') + '" placeholder="Enter PO number"><button class="file-link" id="save-purchase-order" type="button">Save purchase order</button></div>' + (order.deliveryNotePath ? '<div><label>Delivery note (previous upload)</label><button class="file-link download-file" type="button" data-file-path="' + escapeHtml(order.deliveryNotePath) + '" data-file-name="' + escapeHtml(order.deliveryNoteName || 'delivery-note') + '">Download ' + escapeHtml(order.deliveryNoteName || 'delivery note') + '</button></div>' : '') + '<div><label for="detail-proof-of-delivery">Upload proof of delivery</label><input id="detail-proof-of-delivery" type="file" accept=".pdf,.jpg,.jpeg,.png"><button class="file-link" id="save-proof-of-delivery" type="button">Attach and email proof of delivery</button><br><span class="basket-meta">Emails ' + escapeHtml(order.contactEmail || order.customerEmail || '') + '</span>' + (order.proofOfDeliveryPath ? '<br><span class="basket-meta">Current: ' + escapeHtml(order.proofOfDeliveryName || 'proof of delivery') + '</span>' : '') + '</div></div>' : '';
       document.getElementById('order-detail-heading').textContent = order.number;
       const proofOfDeliveryButton = order.proofOfDeliveryPath ? '<button class="document-button open-order-file" type="button" data-file-path="' + escapeHtml(order.proofOfDeliveryPath) + '">Proof of delivery</button>' : '';
       const quoteButton = String(order.number || '').startsWith('QU-') ? '<button class="document-button view-quote-document" type="button">View quote</button>' : '';
@@ -1570,15 +1591,6 @@
           if (!purchaseOrder) { showToast('Enter a purchase order number.'); return; }
           await updateOrder(order.number, { purchaseOrder, status:'PO added' }); openOrderDetail(order.number, true); showToast('Purchase order saved.');
         });
-        document.getElementById('save-delivery-note').addEventListener('click', async () => {
-          const file = document.getElementById('detail-delivery-note').files[0];
-          if (!file) { showToast('Choose a delivery note first.'); return; }
-          try {
-            const storagePath = await uploadOrderFile(file, 'delivery-notes/' + order.id);
-            await supabaseRest('order_files', { method:'POST', body:{ order_id:order.id, owner_id:currentUser.id, kind:'delivery_note', file_name:file.name, storage_path:storagePath, mime_type:file.type || 'application/octet-stream' } });
-            await updateOrder(order.number, { status:'Delivery Note attached' }); await loadOrders(); openOrderDetail(order.number, true); showToast('Delivery note attached.');
-          } catch (error) { showToast(error.message); }
-        });
         document.getElementById('save-proof-of-delivery').addEventListener('click', async () => {
           const file = document.getElementById('detail-proof-of-delivery').files[0];
           if (!file) { showToast('Choose a proof of delivery file first.'); return; }
@@ -1586,11 +1598,12 @@
           try {
             const storagePath = await uploadOrderFile(file, 'proof-of-delivery/' + order.id);
             await supabaseRest('order_files', { method:'POST', body:{ order_id:order.id, owner_id:currentUser.id, kind:'proof_of_delivery', file_name:file.name, storage_path:storagePath, mime_type:file.type || 'application/octet-stream' } });
-            let emailError = '';
-            try { await sendProofOfDelivery(order.number); }
+            await updateOrder(order.number, { status:'Delivered' });
+            let emailError = '', emailedTo = order.contactEmail || order.customerEmail;
+            try { emailedTo = (await sendProofOfDelivery(order.number))?.recipient || emailedTo; }
             catch (error) { emailError = error.message; }
             await loadOrders(); openOrderDetail(order.number, true);
-            showToast(emailError ? 'Proof of delivery attached, but the email could not be sent. ' + emailError : 'Proof of delivery attached and emailed to ' + order.customerEmail + '.');
+            showToast(emailError ? 'Proof of delivery attached, but the email could not be sent. ' + emailError : 'Proof of delivery attached and emailed to ' + emailedTo + '.');
           } catch (error) { showToast('The proof of delivery could not be attached. ' + error.message); }
         });
       }
