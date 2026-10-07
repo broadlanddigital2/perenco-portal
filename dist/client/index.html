@@ -819,6 +819,8 @@
       { code:'SIG-004', title:'LGV Perenco PPE Wall Sign Set', image:'signage/new/perenco-ppe-sign-set.webp', minimumOrder:1, prices:{1:170,2:340,3:510,4:680,5:850}, description:'Two-version LGV wall sign set displaying the approved Perenco PPE requirements.' },
       { code:'SIG-001', title:'Luminescent LSA Fire & Safety Layout Plan', image:'signage/luminescent-lsa.webp', minimumOrder:1, unitTiers:[[1,120],[5,99]], description:'Luminescent LSA fire and safety layout plan. £120 each for 1–4, or £99 each for 5 or more.' },
       { code:'SIG-002', title:'Life Saving Rules Ceiling Grid Hanging Banner', image:'signage/life-saving-rules.webp', minimumOrder:1, prices:{1:160,2:320,3:480,4:640,5:800}, description:'Life Saving Rules hanging banner designed for suspension from a ceiling grid.' },
+      { code:'SIG-007', title:'"You Are Here" Star Stickers – A4 Sheets', image:'signage/new/you-are-here-star-stickers.webp', minimumOrder:20, prices:{20:40}, description:'A4 sheets of red "you are here" star stickers for marking positions on layout plans and site maps. Supplied in packs of 20 sheets.' },
+      { code:'SIG-008', title:'Bespoke Aluminium Composite Luminescent Signs', image:'signage/new/bespoke-luminescent-signs.webp', form:'sign-spec', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Bespoke luminescent safety signs on aluminium composite panel with rounded corners. Price on application.' },
       { code:'SIG-006', title:'Large Presentation Cheque — 800 × 480 mm', image:'signage/new/perenco-large-cheque.webp', form:'cheque', minimumOrder:1, unitTiers:[[1,35]], description:'Large 800 × 480 mm presentation cheque, personalised with the supplied payee, date, amount and wording. £35 each.' }
     ].map(product => ({ ...product, category:'Signage', allowsArtwork:false }));
 
@@ -1125,6 +1127,8 @@
         html += '<div class="checkbox-field"><input class="product-config-input" id="config-international" data-label="International" type="checkbox"><label for="config-international">International</label></div>';
       } else if (product.form === 'badge') {
         html += field('config-name','Name') + field('config-job-title','Job title') + field('config-department','Department');
+      } else if (product.form === 'sign-spec') {
+        html += '<div class="full"><label for="config-sign-spec">Sign details</label><textarea class="product-config-input" id="config-sign-spec" data-label="Sign details" placeholder="Sizes, wording or symbols, and how many of each" required></textarea></div>';
       } else if (product.form === 'pad-titles') {
         html += '<div class="full"><label for="config-pad-titles">Pad title(s)</label><textarea class="product-config-input" id="config-pad-titles" data-label="Pad title(s)" placeholder="Enter each title and how many pads of each, e.g. Emergency Personnel Log – 5" required></textarea></div>';
       } else if (product.form === 'table-card') {
