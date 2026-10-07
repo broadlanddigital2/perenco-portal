@@ -821,6 +821,7 @@
       { code:'SIG-002', title:'Life Saving Rules Ceiling Grid Hanging Banner', image:'signage/life-saving-rules.webp', minimumOrder:1, prices:{1:160,2:320,3:480,4:640,5:800}, description:'Life Saving Rules hanging banner designed for suspension from a ceiling grid.' },
       { code:'SIG-007', title:'"You Are Here" Star Stickers – A4 Sheets', image:'signage/new/you-are-here-star-stickers.webp', minimumOrder:20, prices:{20:40}, description:'A4 sheets of red "you are here" star stickers for marking positions on layout plans and site maps. Supplied in packs of 20 sheets.' },
       { code:'SIG-008', title:'Bespoke Aluminium Composite Luminescent Signs', image:'signage/new/bespoke-luminescent-signs.webp', form:'sign-spec', prices:{1:null,5:null,10:null,25:null,50:null}, description:'Bespoke luminescent safety signs on aluminium composite panel with rounded corners. Price on application.' },
+      { code:'SIG-009', title:'A3 Luminescent Launch Procedure Sign', image:'signage/new/a3-luminescent-launch-procedure.webp', minimumOrder:20, unitTiers:[[20,38]], description:'A3 photoluminescent liferaft launching procedure sign with step-by-step illustrations. £38 each, minimum order 20.' },
       { code:'SIG-006', title:'Large Presentation Cheque — 800 × 480 mm', image:'signage/new/perenco-large-cheque.webp', form:'cheque', minimumOrder:1, unitTiers:[[1,35]], description:'Large 800 × 480 mm presentation cheque, personalised with the supplied payee, date, amount and wording. £35 each.' }
     ].map(product => ({ ...product, category:'Signage', allowsArtwork:false }));
 
@@ -1151,7 +1152,7 @@
       renderProductFields(product);
       const freeQuantity = Boolean(product.unitTiers);
       const quantityInput = document.getElementById('product-quantity-input');
-      quantityInput.hidden = !freeQuantity; quantityInput.value = '';
+      quantityInput.hidden = !freeQuantity; quantityInput.value = ''; quantityInput.min = product.minimumOrder || 1; quantityInput.placeholder = product.minimumOrder > 1 ? 'Minimum ' + product.minimumOrder : 'Enter quantity';
       document.getElementById('product-quantity').hidden = freeQuantity;
       document.getElementById('product-quantity-label').htmlFor = freeQuantity ? 'product-quantity-input' : 'product-quantity';
       const quantities = product.prices ? Object.keys(product.prices) : (product.quantities || []);
@@ -1175,7 +1176,7 @@
     function selectedQuantity() {
       if (selectedProduct?.unitTiers) {
         const value = document.getElementById('product-quantity-input').value.trim();
-        return /^[1-9]\d*$/.test(value) ? value : '';
+        return /^[1-9]\d*$/.test(value) && Number(value) >= (selectedProduct.minimumOrder || 1) ? value : '';
       }
       return document.getElementById('product-quantity').value;
     }
@@ -1420,7 +1421,7 @@
     document.getElementById('add-product-enquiry').addEventListener('click', async () => {
       if (!selectedProduct) return;
       const quantity = selectedQuantity();
-      if (!quantity) { showToast(selectedProduct.unitTiers ? 'Enter a whole-number quantity before adding this product.' : 'Select a quantity before adding this product.'); return; }
+      if (!quantity) { showToast(selectedProduct.unitTiers ? 'Enter a whole-number quantity' + (selectedProduct.minimumOrder > 1 ? ' of at least ' + selectedProduct.minimumOrder : '') + ' before adding this product.' : 'Select a quantity before adding this product.'); return; }
       const configInputs = [...document.querySelectorAll('.product-config-input')];
       const invalid = configInputs.find(input => !input.checkValidity());
       if (invalid) { invalid.reportValidity(); invalid.focus(); return; }
